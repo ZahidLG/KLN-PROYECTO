@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+/// <reference types="vite/client" />
+import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import * as XLSX from 'xlsx';
 import { Html5QrcodeScanner } from 'html5-qrcode';
@@ -76,15 +77,15 @@ const NewUserModal = ({ show, onConfirm, onCancel }: AnyData) => {
                 <h3 style={{marginTop:0, color:'#1e293b'}}>👤 Nuevo Usuario</h3>
                 <div style={{textAlign:'left', marginBottom:'15px'}}>
                     <label style={{fontWeight:'bold', color:'#64748b', fontSize:'0.8rem'}}>Usuario</label>
-                    <input autoFocus value={u} onChange={e => setU(e.target.value)} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1', boxSizing:'border-box', marginTop:'5px', color:'#1e293b'}} />
+                    <input autoFocus value={u} onChange={(e: any) => setU(e.target.value)} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1', boxSizing:'border-box', marginTop:'5px', color:'#1e293b'}} />
                 </div>
                 <div style={{textAlign:'left', marginBottom:'15px'}}>
                     <label style={{fontWeight:'bold', color:'#64748b', fontSize:'0.8rem'}}>Contraseña</label>
-                    <input type="password" value={p} onChange={e => setP(e.target.value)} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1', boxSizing:'border-box', marginTop:'5px', color:'#1e293b'}} />
+                    <input type="password" value={p} onChange={(e: any) => setP(e.target.value)} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1', boxSizing:'border-box', marginTop:'5px', color:'#1e293b'}} />
                 </div>
                 <div style={{textAlign:'left', marginBottom:'25px'}}>
                     <label style={{fontWeight:'bold', color:'#64748b', fontSize:'0.8rem'}}>Rol</label>
-                    <select value={r} onChange={e => setR(e.target.value)} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1', boxSizing:'border-box', marginTop:'5px', color:'#1e293b'}}>
+                    <select value={r} onChange={(e: any) => setR(e.target.value)} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1', boxSizing:'border-box', marginTop:'5px', color:'#1e293b'}}>
                         <option value="USUARIO">USUARIO (Operativo)</option>
                         <option value="CLIENTE">CLIENTE (Solo lectura)</option>
                         <option value="ADMINISTRADOR">ADMINISTRADOR</option>
@@ -110,7 +111,7 @@ const ConfigAlmacenModal = ({ show, ubicacionesActuales, onConfirm, onCancel }: 
                 <p style={{color:'#64748b', fontSize:'0.85rem', marginBottom:'20px'}}>Cada ubicación equivale automáticamente a 1.32 m² (1.20m x 1.10m).</p>
                 <div style={{textAlign:'left', marginBottom:'25px'}}>
                     <label style={{fontWeight:'bold', color:'#64748b', fontSize:'0.8rem'}}>Total de Ubicaciones Físicas</label>
-                    <input type="number" autoFocus value={u} onChange={e => setU(Number(e.target.value))} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1', boxSizing:'border-box', marginTop:'5px', color:'#1e293b'}} />
+                    <input type="number" autoFocus value={u} onChange={(e: any) => setU(Number(e.target.value))} style={{width:'100%', padding:'10px', borderRadius:'8px', border:'1px solid #cbd5e1', boxSizing:'border-box', marginTop:'5px', color:'#1e293b'}} />
                 </div>
                 <div style={{display:'flex', gap:'10px'}}>
                     <button onClick={onCancel} style={{flex:1, padding:'10px', borderRadius:'8px', border:'none', background:'#e2e8f0', color:'#475569', cursor:'pointer', fontWeight:'bold'}}>Cancelar</button>
@@ -133,11 +134,11 @@ const LoginModal = ({ show, type, creds, setCreds, onCancel, onSubmit }: AnyData
               <form onSubmit={onSubmit}>
                   <div style={{textAlign:'left', marginBottom:'20px'}}>
                       <label style={{display:'block', marginBottom:'8px', fontWeight:'bold', color:'#64748b', fontSize:'0.9rem'}}>Usuario</label>
-                      <input autoFocus value={creds.user} onChange={e => setCreds({...creds, user: e.target.value})} style={{width:'100%', padding:'14px', borderRadius:'10px', border:'1px solid #cbd5e1', fontSize:'1rem', boxSizing:'border-box', background:'#f8fafc', color:'#1e293b'}} />
+                      <input autoFocus value={creds.user} onChange={(e: any) => setCreds({...creds, user: e.target.value})} style={{width:'100%', padding:'14px', borderRadius:'10px', border:'1px solid #cbd5e1', fontSize:'1rem', boxSizing:'border-box', background:'#f8fafc', color:'#1e293b'}} />
                   </div>
                   <div style={{textAlign:'left', marginBottom:'30px'}}>
                       <label style={{display:'block', marginBottom:'8px', fontWeight:'bold', color:'#64748b', fontSize:'0.9rem'}}>Contraseña</label>
-                      <input type="password" value={creds.pass} onChange={e => setCreds({...creds, pass: e.target.value})} style={{width:'100%', padding:'14px', borderRadius:'10px', border:'1px solid #cbd5e1', fontSize:'1rem', boxSizing:'border-box', background:'#f8fafc', color:'#1e293b'}} />
+                      <input type="password" value={creds.pass} onChange={(e: any) => setCreds({...creds, pass: e.target.value})} style={{width:'100%', padding:'14px', borderRadius:'10px', border:'1px solid #cbd5e1', fontSize:'1rem', boxSizing:'border-box', background:'#f8fafc', color:'#1e293b'}} />
                   </div>
                   <div style={{display:'flex', gap:'10px'}}>
                       <button type="submit" style={{flex:1, padding:'14px', borderRadius:'10px', border:'none', background:'#1e293b', color:'white', fontWeight:'bold', cursor:'pointer', fontSize:'1rem'}}>Entrar</button>
@@ -193,7 +194,6 @@ export default function App() {
   const [totalUbicaciones, setTotalUbicaciones] = useState(100); 
 
   const [searchTerm, setSearchTerm] = useState('');
-  // estado_fisico ahora guarda 'Cajas' o 'Piezas'
   const [form, setForm] = useState({ item: '', serie: '', ubicacion: '', box: '1', guia: '', estado_fisico: 'Cajas' });
   const [isDragging, setIsDragging] = useState(false); 
   const [scanningField, setScanningField] = useState<string | null>(null);
@@ -240,7 +240,6 @@ export default function App() {
   const fetchData = async () => {
     const { data: inv } = await supabase.from('inventario').select('*');
     if (inv) {
-        // Orden alfanumérico estricto por ubicación (Tarima 1, Tarima 2, Tarima 10)
         const sortedInv = inv.sort((a, b) => String(a.ubicacion || '').localeCompare(String(b.ubicacion || ''), undefined, { numeric: true, sensitivity: 'base' }));
         setInventario(sortedInv);
     }
@@ -343,7 +342,7 @@ export default function App() {
   };
   
   const handleImportExcel = (e: any) => { if (e.target.files?.[0]) processFileComplete(e.target.files[0]); };
-  const handleDrop = (e: any) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files[0]) processFileComplete(e.dataTransfer.files[0]); };
+  const handleDrop = (e: any) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files && e.dataTransfer.files[0]) processFileComplete(e.dataTransfer.files[0]); };
   
   const exportarInventario = () => { 
       if (inventario.length === 0) return showAlert("Aviso", "No hay datos", "info"); 
@@ -405,7 +404,7 @@ export default function App() {
 
 
   // ESTILOS DE INPUTS OSCUROS PARA FORMULARIO
-  const darkInputStyle = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #475569', background: '#334155', color: 'white', fontWeight: 'bold', fontSize: '1rem', boxSizing: 'border-box' as 'border-box' };
+  const darkInputStyle = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #475569', background: '#334155', color: 'white', fontWeight: 'bold' as const, fontSize: '1rem', boxSizing: 'border-box' as const };
 
   return (
     <>
@@ -449,7 +448,7 @@ export default function App() {
               </div>
               <div style={{marginBottom:'25px'}}>
                   <label style={{display:'block', fontWeight:'bold', color:'#1e293b', marginBottom:'8px'}}>Cantidad a sacar</label>
-                  <input type="number" min="1" max={modalSurtido.item?.box || 1} style={{width: '100%', padding: '14px', borderRadius: '10px', border:'1px solid #cbd5e1', fontSize: '1rem', boxSizing: 'border-box'}} value={formSurtido.cantidad_surtir} onChange={e => setFormSurtido({cantidad_surtir: parseInt(e.target.value) || 1})} />
+                  <input type="number" min="1" max={modalSurtido.item?.box || 1} style={{width: '100%', padding: '14px', borderRadius: '10px', border:'1px solid #cbd5e1', fontSize: '1rem', boxSizing: 'border-box'}} value={formSurtido.cantidad_surtir} onChange={(e: any) => setFormSurtido({cantidad_surtir: parseInt(e.target.value) || 1})} />
               </div>
               <div style={{ display: 'flex', gap: '15px' }}>
                 <button onClick={() => setModalSurtido({ show: false })} style={{ flex: 1, padding: '14px', borderRadius: '10px', border:'none', background:'#ef4444', color:'white', fontWeight:'bold', cursor:'pointer', fontSize:'1rem' }}>Cancelar</button>
@@ -477,7 +476,7 @@ export default function App() {
             <>
               <button 
                   className="btn-hero"
-                  onMouseEnter={()=>setHoveredCard('qro')} onMouseLeave={()=>setHoveredCard(null)} onClick={()=>openLogin('warehouse')}
+                  onMouseEnter={() => setHoveredCard('qro')} onMouseLeave={() => setHoveredCard(null)} onClick={() => openLogin('warehouse')}
               >
                   QUERÉTARO
               </button>
@@ -502,7 +501,7 @@ export default function App() {
                     {tab === 'inventario' && (
                       <>
                         <div style={{display:'flex', gap:'15px', marginBottom:'25px', alignItems:'center', flexWrap: 'wrap'}}>
-                            <input style={{width: '100%', padding: '14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '1rem', flex:1, minWidth: '200px', color:'#1e293b'}} placeholder="🔍 Buscar por Item o Serie..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                            <input style={{width: '100%', padding: '14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '1rem', flex:1, minWidth: '200px', color:'#1e293b'}} placeholder="🔍 Buscar por Item o Serie..." value={searchTerm} onChange={(e: any) => setSearchTerm(e.target.value)} />
                             {!isClient && (
                                 <div onClick={() => setModoEdicionUbicacion(!modoEdicionUbicacion)} style={{cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'0 10px'}}>
                                     <span style={{fontSize:'0.7rem', color:'#1e293b', fontWeight:'bold'}}>EDITAR UBIC</span>
@@ -525,11 +524,11 @@ export default function App() {
                               </thead>
                               <tbody>
                                 {inventario.filter(i => String(i.item || '').toLowerCase().includes(searchTerm.toLowerCase()) || String(i.serie || '').toLowerCase().includes(searchTerm.toLowerCase())).map(i => (
-                                  <tr key={i.id} style={{borderBottom: '1px solid #eee', transition: '0.2s'}} onMouseOver={(e)=>e.currentTarget.style.background='#f1f5f9'} onMouseOut={(e)=>e.currentTarget.style.background='transparent'}>
+                                  <tr key={i.id} style={{borderBottom: '1px solid #eee', transition: '0.2s'}} onMouseOver={(e: React.MouseEvent<HTMLTableRowElement>) => (e.currentTarget as HTMLTableRowElement).style.background='#f1f5f9'} onMouseOut={(e: React.MouseEvent<HTMLTableRowElement>) => (e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
                                     <td style={{color: '#334155', padding: '12px 10px'}}><strong>{i.item}</strong></td>
                                     <td style={{color: '#334155', padding: '12px 10px'}}>{i.serie}</td>
-                                    <td style={{color: '#334155', padding: '12px 10px'}}>{modoEdicionUbicacion && !isClient ? <input value={i.ubicacion} style={{width: '80px', padding: '8px', borderRadius: '8px', border: '2px solid #3b82f6'}} onChange={e => handleUpdateUbicacionRapid(i.id, 'ubicacion', e.target.value)} onBlur={e => handleSaveUbicacionHistory(i.id, 'ubicacion', e.target.value, i.ubicacion)} /> : i.ubicacion}</td>
-                                    <td style={{color: '#334155', padding: '12px 10px'}}>{modoEdicionUbicacion && !isClient ? <input type="number" value={i.box || ''} style={{width: '80px', padding: '8px', borderRadius: '8px', border: '2px solid #3b82f6'}} onChange={e => handleUpdateUbicacionRapid(i.id, 'box', e.target.value)} onBlur={e => handleSaveUbicacionHistory(i.id, 'box', e.target.value, i.box || '')} /> : (i.box || '1')}</td>
+                                    <td style={{color: '#334155', padding: '12px 10px'}}>{modoEdicionUbicacion && !isClient ? <input value={i.ubicacion} style={{width: '80px', padding: '8px', borderRadius: '8px', border: '2px solid #3b82f6'}} onChange={(e: any) => handleUpdateUbicacionRapid(i.id, 'ubicacion', e.target.value)} onBlur={(e: any) => handleSaveUbicacionHistory(i.id, 'ubicacion', e.target.value, i.ubicacion)} /> : i.ubicacion}</td>
+                                    <td style={{color: '#334155', padding: '12px 10px'}}>{modoEdicionUbicacion && !isClient ? <input type="number" value={i.box || ''} style={{width: '80px', padding: '8px', borderRadius: '8px', border: '2px solid #3b82f6'}} onChange={(e: any) => handleUpdateUbicacionRapid(i.id, 'box', e.target.value)} onBlur={(e: any) => handleSaveUbicacionHistory(i.id, 'box', e.target.value, i.box || '')} /> : (i.box || '1')}</td>
                                     <td style={{color: '#10b981', padding: '12px 10px', fontWeight:'bold'}}>{i.estado_fisico}</td>
                                     <td style={{padding: '12px 10px'}}>
                                         <div style={{display:'flex', gap:'10px'}}>
@@ -556,41 +555,41 @@ export default function App() {
                                   <div>
                                       <label style={{fontWeight: 'bold', display: 'block', marginBottom: '5px', color: '#475569'}}>Item</label>
                                       <div style={{display: 'flex', gap: '5px'}}>
-                                          <input style={darkInputStyle} value={form.item} onChange={e => setForm({...form, item:e.target.value})} required />
+                                          <input style={darkInputStyle} value={form.item} onChange={(e: any) => setForm({...form, item:e.target.value})} required />
                                           <button type="button" onClick={() => setScanningField('item')} style={{padding: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer'}}>📷</button>
                                       </div>
                                   </div>
                                   <div>
                                       <label style={{fontWeight: 'bold', display: 'block', marginBottom: '5px', color: '#475569'}}>Serie</label>
                                       <div style={{display: 'flex', gap: '5px'}}>
-                                          <input style={darkInputStyle} value={form.serie} onChange={e => setForm({...form, serie:e.target.value})} />
+                                          <input style={darkInputStyle} value={form.serie} onChange={(e: any) => setForm({...form, serie:e.target.value})} />
                                           <button type="button" onClick={() => setScanningField('serie')} style={{padding: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer'}}>📷</button>
                                       </div>
                                   </div>
                                   <div>
                                       <label style={{fontWeight: 'bold', display: 'block', marginBottom: '5px', color: '#475569'}}>Ubicación</label>
-                                      <input style={darkInputStyle} value={form.ubicacion} onChange={e => setForm({...form, ubicacion:e.target.value})} required />
+                                      <input style={darkInputStyle} value={form.ubicacion} onChange={(e: any) => setForm({...form, ubicacion:e.target.value})} required />
                                   </div>
                                   <div>
                                       <label style={{fontWeight: 'bold', display: 'block', marginBottom: '5px', color: '#475569'}}>Cantidad</label>
-                                      <input type="number" min="1" style={darkInputStyle} value={form.box} onChange={e => setForm({...form, box:e.target.value})} required />
+                                      <input type="number" min="1" style={darkInputStyle} value={form.box} onChange={(e: any) => setForm({...form, box:e.target.value})} required />
                                   </div>
                                   <div>
                                       <label style={{fontWeight: 'bold', display: 'block', marginBottom: '5px', color: '#475569'}}>Unidad</label>
-                                      <select style={darkInputStyle} value={form.estado_fisico} onChange={e => setForm({...form, estado_fisico: e.target.value})}>
+                                      <select style={darkInputStyle} value={form.estado_fisico} onChange={(e: any) => setForm({...form, estado_fisico: e.target.value})}>
                                           <option value="Cajas">Cajas</option>
                                           <option value="Piezas">Piezas</option>
                                       </select>
                                   </div>
                                   <div>
                                       <label style={{fontWeight: 'bold', display: 'block', marginBottom: '5px', color: '#059669'}}>Guía Opcional</label>
-                                      <input style={{width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #10b981', background: '#f0fdf4', color: '#1e293b', boxSizing: 'border-box'}} value={form.guia} onChange={e => setForm({...form, guia:e.target.value})} placeholder="Opcional" />
+                                      <input style={{width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #10b981', background: '#f0fdf4', color: '#1e293b', boxSizing: 'border-box'}} value={form.guia} onChange={(e: any) => setForm({...form, guia:e.target.value})} placeholder="Opcional" />
                                   </div>
                               </div>
                               <button onClick={handleInsertEntrada} style={{width:'100%', padding:'18px', background:'#1e293b', color:'white', border:'none', borderRadius:'12px', fontWeight:'bold', fontSize:'1.2rem', cursor:'pointer', marginTop:'25px'}}>Guardar Entrada</button>
                           </div>
                           
-                          <div style={{flex: '1', minWidth: '300px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', border: '3px dashed #cbd5e1', borderRadius: '20px', background: isDragging ? '#e0f2fe' : 'rgba(255,255,255,0.5)', transition: '0.3s', padding: '40px', textAlign: 'center'}} onDragOver={(e)=>{e.preventDefault(); setIsDragging(true)}} onDragLeave={()=>setIsDragging(false)} onDrop={(e)=>{e.preventDefault(); setIsDragging(false); processFileComplete(e.dataTransfer.files[0])}}>
+                          <div style={{flex: '1', minWidth: '300px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', border: '3px dashed #cbd5e1', borderRadius: '20px', background: isDragging ? '#e0f2fe' : 'rgba(255,255,255,0.5)', transition: '0.3s', padding: '40px', textAlign: 'center'}} onDragOver={(e: any)=>{e.preventDefault(); setIsDragging(true)}} onDragLeave={()=>setIsDragging(false)} onDrop={(e: any)=>{e.preventDefault(); setIsDragging(false); processFileComplete(e.dataTransfer.files[0])}}>
                               <div style={{fontSize:'4rem', marginBottom:'10px'}}>📊</div>
                               <h2 style={{color:'#1e293b', margin:'0 0 15px 0'}}>Importación Masiva</h2>
                               <div style={{color:'#64748b', fontSize:'0.95rem', marginBottom:'30px', lineHeight:'1.8', display:'flex', flexDirection:'column', gap:'5px'}}>
@@ -601,7 +600,7 @@ export default function App() {
                                   <span><b>Columna E:</b> Unidad (Cajas/Piezas)</span>
                               </div>
                               <label style={{padding:'12px 25px', background:'#3b82f6', color:'white', borderRadius:'10px', cursor:'pointer', fontWeight:'bold', fontSize:'1.1rem'}}>
-                                  Seleccionar Archivo<input type="file" style={{display:'none'}} onChange={(e)=>processFileComplete(e.target.files![0])}/>
+                                  Seleccionar Archivo<input type="file" style={{display:'none'}} onChange={(e: any)=>processFileComplete(e.target.files![0])}/>
                               </label>
                           </div>
                       </div>
