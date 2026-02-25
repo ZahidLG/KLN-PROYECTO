@@ -431,7 +431,7 @@ export default function App() {
         
         <SuccessModal show={successModal.show} message={successModal.message} onClose={() => setSuccessModal({show:false, message:''})} />
         <AlertModal show={alertInfo.show} title={alertInfo.title} message={alertInfo.message} type={alertInfo.type} onClose={() => setAlertInfo({show:false, title:'', message:'', type:'info'})} />
-        <LoginModal show={loginModal.show} type={loginModal.type} creds={loginCreds} setCreds={setLoginCreds} onCancel={() => setLoginModal({show:false, type:'', target:''})} onSubmit={handleLoginSubmit} />
+        <LoginModal show={loginModal.show} type={loginModal.type} creds={loginCreds} setCreds={setLoginCreds} onCancel={() => setLoginModal({show:false, type:'warehouse'})} onSubmit={handleLoginSubmit} />
         <TraceabilityModal show={modalTrazabilidadState.show} data={modalTrazabilidadState.data} onClose={() => setModalTrazabilidadState({show:false, data:null})} />
         <NewUserModal show={modalUsuario} onConfirm={handleConfirmNewUser} onCancel={() => setModalUsuario(false)} />
         <ConfigAlmacenModal show={modalConfig} ubicacionesActuales={totalUbicaciones} onConfirm={handleSaveConfig} onCancel={()=>setModalConfig(false)} />
