@@ -240,7 +240,13 @@ export default function App() {
   const fetchData = async () => {
     const { data: inv } = await supabase.from('inventario').select('*');
     if (inv) {
-        const sortedInv = inv.sort((a, b) => String(a.ubicacion || '').localeCompare(String(b.ubicacion || ''), undefined, { numeric: true, sensitivity: 'base' }));
+        const parseDateSort = (dStr: string) => {
+            if(!dStr || dStr === 'S/D') return 0;
+            const p = dStr.split('/');
+            if(p.length === 3) return new Date(Number(p[2]), Number(p[1])-1, Number(p[0])).getTime();
+            return new Date(dStr).getTime() || 0;
+        };
+        const sortedInv = inv.sort((a, b) => parseDateSort(a.fechaEntrada) - parseDateSort(b.fechaEntrada));
         setInventario(sortedInv);
     }
     
@@ -397,10 +403,29 @@ export default function App() {
       { name: 'Unidades', Cajas: inventario.filter(i => i.estado_fisico === 'Cajas').length, Piezas: inventario.filter(i => i.estado_fisico === 'Piezas').length }
   ];
 
-  const trendMap = inventario.reduce((acc:any, curr) => {
-      const d = curr.fechaEntrada || 'S/D'; acc[d] = (acc[d] || 0) + 1; return acc;
-  }, {});
-  const lineData = Object.keys(trendMap).map(k => ({ fecha: k.substring(0,5), Ingresos: trendMap[k] })).slice(-7);
+  const trendMap: any = {};
+  inventario.forEach(i => {
+      const d = i.fechaEntrada || 'S/D';
+      if (!trendMap[d]) trendMap[d] = { Ingresos: 0, Salidas: 0 };
+      trendMap[d].Ingresos += 1;
+  });
+  salidas.forEach(s => {
+      const d = s.fechaSalida ? String(s.fechaSalida).split(' ')[0] : 'S/D';
+      if (!trendMap[d]) trendMap[d] = { Ingresos: 0, Salidas: 0 };
+      trendMap[d].Salidas += 1;
+  });
+
+  const parseDateChart = (dStr: string) => {
+      if(!dStr || dStr === 'S/D') return 0;
+      const p = dStr.split('/');
+      if(p.length === 3) return new Date(Number(p[2]), Number(p[1])-1, Number(p[0])).getTime();
+      return new Date(dStr).getTime() || 0;
+  };
+
+  const lineData = Object.keys(trendMap)
+      .sort((a, b) => parseDateChart(a) - parseDateChart(b))
+      .slice(-7)
+      .map(k => ({ fecha: k !== 'S/D' ? k.substring(0,5) : 'S/D', Ingresos: trendMap[k].Ingresos, Salidas: trendMap[k].Salidas }));
 
 
   // ESTILOS DE INPUTS OSCUROS PARA FORMULARIO
@@ -415,6 +440,9 @@ export default function App() {
         .sidebar-menu { width: 250px; background: rgba(255, 255, 255, 0.5); border-right: 1px solid rgba(0,0,0,0.1); padding: 30px 20px; display: flex; flex-direction: column; overflow-y: auto; }
         .main-content-panel { flex: 1; padding: 40px; overflow-y: auto; position: relative; width: calc(100% - 250px); }
         .recharts-wrapper { font-family: inherit !important; }
+
+        .btn-hero { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border: 2px solid rgba(255, 255, 255, 0.4); color: white; font-size: 3rem; font-weight: 900; padding: 40px 100px; border-radius: 50px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); letter-spacing: 5px; text-transform: uppercase; }
+        .btn-hero:hover { transform: scale(1.05); background: rgba(255, 255, 255, 0.25); border-color: rgba(255, 255, 255, 1); box-shadow: 0 0 40px rgba(255, 255, 255, 0.8), 0 0 80px rgba(255, 255, 255, 0.5); }
         
         @media (max-width: 768px) {
             .glass-container { flex-direction: column; height: 95vh; border-radius: 15px; }
@@ -516,6 +544,7 @@ export default function App() {
                                 <tr>
                                   <th style={{color: '#0f172a', fontWeight: '800', borderBottom: '2px solid #1e293b', padding: '15px 10px', textAlign: 'left', position: 'sticky', top: 0, background: '#f8fafc'}}>Item</th>
                                   <th style={{color: '#0f172a', fontWeight: '800', borderBottom: '2px solid #1e293b', padding: '15px 10px', textAlign: 'left', position: 'sticky', top: 0, background: '#f8fafc'}}>Serie</th>
+                                  <th style={{color: '#0f172a', fontWeight: '800', borderBottom: '2px solid #1e293b', padding: '15px 10px', textAlign: 'left', position: 'sticky', top: 0, background: '#f8fafc'}}>Fecha Ingreso</th>
                                   <th style={{color: '#0f172a', fontWeight: '800', borderBottom: '2px solid #1e293b', padding: '15px 10px', textAlign: 'left', position: 'sticky', top: 0, background: '#f8fafc'}}>Ubicación</th>
                                   <th style={{color: '#0f172a', fontWeight: '800', borderBottom: '2px solid #1e293b', padding: '15px 10px', textAlign: 'left', position: 'sticky', top: 0, background: '#f8fafc'}}>Cantidad</th>
                                   <th style={{color: '#0f172a', fontWeight: '800', borderBottom: '2px solid #1e293b', padding: '15px 10px', textAlign: 'left', position: 'sticky', top: 0, background: '#f8fafc'}}>Unidad</th>
@@ -527,6 +556,7 @@ export default function App() {
                                   <tr key={i.id} style={{borderBottom: '1px solid #eee', transition: '0.2s'}} onMouseOver={(e: React.MouseEvent<HTMLTableRowElement>) => (e.currentTarget as HTMLTableRowElement).style.background='#f1f5f9'} onMouseOut={(e: React.MouseEvent<HTMLTableRowElement>) => (e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
                                     <td style={{color: '#334155', padding: '12px 10px'}}><strong>{i.item}</strong></td>
                                     <td style={{color: '#334155', padding: '12px 10px'}}>{i.serie}</td>
+                                    <td style={{color: '#334155', padding: '12px 10px'}}>{i.fechaEntrada || 'S/D'}</td>
                                     <td style={{color: '#334155', padding: '12px 10px'}}>{modoEdicionUbicacion && !isClient ? <input value={i.ubicacion} style={{width: '80px', padding: '8px', borderRadius: '8px', border: '2px solid #3b82f6'}} onChange={(e: any) => handleUpdateUbicacionRapid(i.id, 'ubicacion', e.target.value)} onBlur={(e: any) => handleSaveUbicacionHistory(i.id, 'ubicacion', e.target.value, i.ubicacion)} /> : i.ubicacion}</td>
                                     <td style={{color: '#334155', padding: '12px 10px'}}>{modoEdicionUbicacion && !isClient ? <input type="number" value={i.box || ''} style={{width: '80px', padding: '8px', borderRadius: '8px', border: '2px solid #3b82f6'}} onChange={(e: any) => handleUpdateUbicacionRapid(i.id, 'box', e.target.value)} onBlur={(e: any) => handleSaveUbicacionHistory(i.id, 'box', e.target.value, i.box || '')} /> : (i.box || '1')}</td>
                                     <td style={{color: '#10b981', padding: '12px 10px', fontWeight:'bold'}}>{i.estado_fisico}</td>
@@ -538,7 +568,7 @@ export default function App() {
                                     </td>
                                   </tr>
                                 ))}
-                                {inventario.length === 0 && <tr><td colSpan={6} style={{textAlign:'center', padding:'30px', color:'#94a3b8'}}>No hay registros en el inventario.</td></tr>}
+                                {inventario.length === 0 && <tr><td colSpan={7} style={{textAlign:'center', padding:'30px', color:'#94a3b8'}}>No hay registros en el inventario.</td></tr>}
                               </tbody>
                             </table>
                         </div>
@@ -717,6 +747,7 @@ export default function App() {
                                                 <YAxis allowDecimals={false} />
                                                 <RechartsTooltip />
                                                 <Line type="monotone" dataKey="Ingresos" stroke="#10b981" strokeWidth={3} dot={{r: 6}} activeDot={{r: 8}} />
+                                                <Line type="monotone" dataKey="Salidas" stroke="#ef4444" strokeWidth={3} dot={{r: 6}} activeDot={{r: 8}} />
                                             </LineChart>
                                         </ResponsiveContainer>
                                     </div>
