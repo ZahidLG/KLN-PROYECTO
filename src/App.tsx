@@ -404,15 +404,38 @@ export default function App() {
   ];
 
   const trendMap: any = {};
-  inventario.forEach(i => {
-      const d = i.fechaEntrada || 'S/D';
-      if (!trendMap[d]) trendMap[d] = { Ingresos: 0, Salidas: 0 };
-      trendMap[d].Ingresos += 1;
-  });
+  const entradasUnicas = new Set();
+
+  // Función para registrar Entradas por ubicación única
+  const registrarEntrada = (itemObj: any, fechaCampo: string) => {
+      const fecha = itemObj[fechaCampo] || 'S/D';
+      // Identificador único para cada ubicación física registrada en esa fecha
+      const uniqueKey = `${itemObj.item}-${itemObj.serie || ''}-${itemObj.ubicacion}-${fecha}`;
+      
+      if (!entradasUnicas.has(uniqueKey)) {
+          entradasUnicas.add(uniqueKey);
+          if (!trendMap[fecha]) trendMap[fecha] = { Ingresos: 0, Salidas: 0, SalidasDetalleObj: {} };
+          trendMap[fecha].Ingresos += 1; // Suma 1 ubicación ingresada
+      }
+  };
+
+  // 1. Contabilizar todas las Entradas
+  inventario.forEach(i => registrarEntrada(i, 'fechaEntrada'));
+  salidas.forEach(s => registrarEntrada(s, 'fecha_entrada'));
+
+  // 2. Contabilizar las Salidas (Sumando eventos y agrupando cantidades por unidad)
   salidas.forEach(s => {
       const d = s.fechaSalida ? String(s.fechaSalida).split(' ')[0] : 'S/D';
-      if (!trendMap[d]) trendMap[d] = { Ingresos: 0, Salidas: 0 };
-      trendMap[d].Salidas += 1;
+      if (!trendMap[d]) trendMap[d] = { Ingresos: 0, Salidas: 0, SalidasDetalleObj: {} };
+      
+      trendMap[d].Salidas += 1; // Cuenta 1 evento de salida
+
+      // Agrupa las cantidades según su estado físico (ej. suma todas las Cajas, suma todas las Tarimas)
+      const unidad = s.estado_fisico || 'Unidades';
+      const cantidad = parseInt(s.box) || 1;
+      
+      if (!trendMap[d].SalidasDetalleObj[unidad]) trendMap[d].SalidasDetalleObj[unidad] = 0;
+      trendMap[d].SalidasDetalleObj[unidad] += cantidad;
   });
 
   const parseDateChart = (dStr: string) => {
@@ -425,9 +448,40 @@ export default function App() {
   const lineData = Object.keys(trendMap)
       .sort((a, b) => parseDateChart(a) - parseDateChart(b))
       .slice(-7)
-      .map(k => ({ fecha: k !== 'S/D' ? k.substring(0,5) : 'S/D', Ingresos: trendMap[k].Ingresos, Salidas: trendMap[k].Salidas }));
+      .map(k => {
+          // Convertir el objeto agrupado en el arreglo de textos que espera tu Tooltip
+          const detObj = trendMap[k].SalidasDetalleObj || {};
+          const detallesArr = Object.keys(detObj).map(unidad => `${detObj[unidad]} ${unidad}`);
+          
+          return { 
+              fecha: k !== 'S/D' ? k.substring(0,5) : 'S/D', 
+              Ingresos: trendMap[k].Ingresos, 
+              Salidas: trendMap[k].Salidas,
+              Detalles: detallesArr
+          };
+      });
 
-
+      const CustomTooltipChart = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            const data = payload[0].payload;
+            return (
+                <div style={{ background: 'white', padding: '15px', border: '1px solid #cbd5e1', borderRadius: '10px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+                    <p style={{ margin: '0 0 10px 0', fontWeight: 'bold', color: '#1e293b', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Fecha: {label}</p>
+                    <p style={{ margin: '5px 0', color: '#10b981', fontWeight: 'bold' }}>Entradas: {data.Ingresos}</p>
+                    <p style={{ margin: '5px 0', color: '#ef4444', fontWeight: 'bold' }}>Salidas: {data.Salidas}</p>
+                    {data.Salidas > 0 && data.Detalles && data.Detalles.length > 0 && (
+                        <div style={{ marginTop: '10px', fontSize: '0.85rem', color: '#475569' }}>
+                            <strong>Detalle de Salidas:</strong>
+                            <ul style={{ margin: '5px 0 0 0', paddingLeft: '20px' }}>
+                                {data.Detalles.map((d: string, i: number) => <li key={i}>{d}</li>)}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        return null;
+    };
   // ESTILOS DE INPUTS OSCUROS PARA FORMULARIO
   const darkInputStyle = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #475569', background: '#334155', color: 'white', fontWeight: 'bold' as const, fontSize: '1rem', boxSizing: 'border-box' as const };
 
@@ -738,14 +792,14 @@ export default function App() {
                                 </div>
                                 
                                 <div style={{background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #e2e8f0', height: '300px', display: 'flex', flexDirection: 'column', gridColumn: '1 / -1'}}>
-                                    <h3 style={{margin: '0 0 10px 0', textAlign: 'center', color: '#475569'}}>Tendencia de Entradas (Últimas Fechas)</h3>
+                                    <h3 style={{margin: '0 0 10px 0', textAlign: 'center', color: '#475569'}}>Tendencia de Entradas y Salidas</h3>
                                     <div style={{flex: 1}}>
                                         <ResponsiveContainer width="100%" height="100%">
                                             <LineChart data={lineData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                                                 <XAxis dataKey="fecha" />
                                                 <YAxis allowDecimals={false} />
-                                                <RechartsTooltip />
+                                                <RechartsTooltip content={<CustomTooltipChart />} />
                                                 <Line type="monotone" dataKey="Ingresos" stroke="#10b981" strokeWidth={3} dot={{r: 6}} activeDot={{r: 8}} />
                                                 <Line type="monotone" dataKey="Salidas" stroke="#ef4444" strokeWidth={3} dot={{r: 6}} activeDot={{r: 8}} />
                                             </LineChart>
