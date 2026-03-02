@@ -200,6 +200,7 @@ export default function App() {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   const [modoEdicionUbicacion, setModoEdicionUbicacion] = useState(false);
+  const [monthOffset, setMonthOffset] = useState(0);
   const [modalTrazabilidadState, setModalTrazabilidadState] = useState<{show: boolean, data: any}>({ show: false, data: null });
   
   const [loginModal, setLoginModal] = useState<{show: boolean, type: 'warehouse' | 'admin_manage'}>({ show: false, type: 'warehouse' });
@@ -464,21 +465,39 @@ export default function App() {
 
   const parseDateChart = (dStr: string) => {
     if(!dStr || dStr === 'S/D') return 0;
+    if(dStr.includes('-')) {
+        const parts = dStr.split('-');
+        if(parts.length === 3) return new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2])).getTime();
+    }
     const p = dStr.split('/');
     if(p.length === 3) return new Date(Number(p[2]), Number(p[1])-1, Number(p[0])).getTime();
     return new Date(dStr).getTime() || 0;
 };
 
 const today = new Date();
-let reportMonthDate = today;
+let baseMonthIndex = today.getMonth();
+let baseYear = today.getFullYear();
 if (today.getDate() >= 27) {
-    reportMonthDate = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    baseMonthIndex += 1;
 }
-const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-const currentReportMonthName = monthNames[reportMonthDate.getMonth()];
 
-const startDate = new Date(reportMonthDate.getFullYear(), reportMonthDate.getMonth() - 1, 27).getTime();
-const endDate = new Date(reportMonthDate.getFullYear(), reportMonthDate.getMonth(), 26, 23, 59, 59).getTime();
+const targetDate = new Date(baseYear, baseMonthIndex + monthOffset, 1);
+const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const reportMonthName = monthNames[targetDate.getMonth()];
+
+const startDate = new Date(targetDate.getFullYear(), targetDate.getMonth() - 1, 27).getTime();
+const endDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 26, 23, 59, 59).getTime();
+
+const formatAxisDate = (dStr: string) => {
+    if(!dStr || dStr === 'S/D') return 'S/D';
+    if(dStr.includes('-')) {
+        const parts = dStr.split('-');
+        if(parts.length === 3) return `${parts[2]}/${parts[1]}`;
+    }
+    const p = dStr.split('/');
+    if(p.length === 3) return `${p[0]}/${p[1]}`;
+    return dStr.substring(0,5);
+};
 
 const lineData = Object.keys(trendMap)
     .filter(k => {
@@ -490,7 +509,7 @@ const lineData = Object.keys(trendMap)
         const detObj = trendMap[k].SalidasDetalleObj || {};
         const detallesArr = Object.keys(detObj).map(unidad => `${detObj[unidad]} ${unidad}`);
         return { 
-            fecha: k !== 'S/D' ? k.substring(0,5) : 'S/D', 
+            fecha: formatAxisDate(k), 
             Ingresos: trendMap[k].Ingresos, 
             Salidas: trendMap[k].Salidas,
             Detalles: detallesArr
@@ -828,7 +847,13 @@ const lineData = Object.keys(trendMap)
                                 </div>
                                 
                                 <div style={{background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #e2e8f0', height: '300px', display: 'flex', flexDirection: 'column', gridColumn: '1 / -1'}}>
-                                <h3 style={{margin: '0 0 10px 0', textAlign: 'center', color: '#475569'}}>Tendencia de Entradas y Salidas <span style={{color: '#3b82f6', fontSize: '0.8em', marginLeft: '10px'}}>Mes corriente ({currentReportMonthName})</span></h3>
+                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
+    <button onClick={() => setMonthOffset(prev => prev - 1)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>⬅️</button>
+    <h3 style={{ margin: 0, textAlign: 'center', color: '#475569' }}>
+        Tendencia de Entradas y Salidas <span style={{ color: '#3b82f6', fontSize: '0.8em', marginLeft: '10px' }}>{monthOffset === 0 ? 'Mes corriente' : 'Mes'} {reportMonthName}</span>
+    </h3>
+    <button onClick={() => setMonthOffset(prev => prev + 1)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', opacity: monthOffset >= 0 ? 0.3 : 1 }}>➡️</button>
+</div>
                                     <div style={{flex: 1}}>
                                         <ResponsiveContainer width="100%" height="100%">
                                             <LineChart data={lineData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
