@@ -450,18 +450,22 @@ export default function App() {
 
   // 2. Contabilizar las Salidas (Sumando eventos y agrupando cantidades por unidad)
   salidas.forEach(s => {
-      const d = s.fechaSalida ? String(s.fechaSalida).split(' ')[0] : 'S/D';
-      if (!trendMap[d]) trendMap[d] = { Ingresos: 0, Salidas: 0, SalidasDetalleObj: {} };
-      
-      trendMap[d].Salidas += 1; // Cuenta 1 evento de salida
+    let d = 'S/D';
+    if (s.fechaSalida) {
+        // Limpia comas indeseadas antes de leer la fecha
+        d = String(s.fechaSalida).replace(',', '').split(' ')[0];
+    }
+    if (!trendMap[d]) trendMap[d] = { Ingresos: 0, Salidas: 0, SalidasDetalleObj: {} };
+    
+    trendMap[d].Salidas += 1; // Cuenta 1 evento de salida
 
-      // Agrupa las cantidades según su estado físico (ej. suma todas las Cajas, suma todas las Tarimas)
-      const unidad = s.estado_fisico || 'Unidades';
-      const cantidad = parseInt(s.box) || 1;
-      
-      if (!trendMap[d].SalidasDetalleObj[unidad]) trendMap[d].SalidasDetalleObj[unidad] = 0;
-      trendMap[d].SalidasDetalleObj[unidad] += cantidad;
-  });
+    // Agrupa las cantidades según su estado físico (ej. suma todas las Cajas, suma todas las Tarimas)
+    const unidad = s.estado_fisico || 'Unidades';
+    const cantidad = parseInt(s.box) || 1;
+    
+    if (!trendMap[d].SalidasDetalleObj[unidad]) trendMap[d].SalidasDetalleObj[unidad] = 0;
+    trendMap[d].SalidasDetalleObj[unidad] += cantidad;
+});
 
   const parseDateChart = (dStr: string) => {
     if(!dStr || dStr === 'S/D') return 0;
@@ -850,7 +854,7 @@ const lineData = Object.keys(trendMap)
                                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
     <button onClick={() => setMonthOffset(prev => prev - 1)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>⬅️</button>
     <h3 style={{ margin: 0, textAlign: 'center', color: '#475569' }}>
-        Tendencia de Entradas y Salidas <span style={{ color: '#3b82f6', fontSize: '0.8em', marginLeft: '10px' }}>{monthOffset === 0 ? 'Mes corriente' : 'Mes'} {reportMonthName}</span>
+        Tendencia de Entradas y Salidas {reportMonthName}
     </h3>
     <button onClick={() => setMonthOffset(prev => prev + 1)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', opacity: monthOffset >= 0 ? 0.3 : 1 }}>➡️</button>
 </div>
