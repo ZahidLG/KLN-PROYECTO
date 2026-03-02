@@ -246,12 +246,36 @@ export default function App() {
             if(p.length === 3) return new Date(Number(p[2]), Number(p[1])-1, Number(p[0])).getTime();
             return new Date(dStr).getTime() || 0;
         };
-        const sortedInv = inv.sort((a, b) => parseDateSort(a.fechaEntrada) - parseDateSort(b.fechaEntrada));
+        const sortedInv = inv.sort((a, b) => {
+            const diff = parseDateSort(a.fechaEntrada) - parseDateSort(b.fechaEntrada);
+            if (diff !== 0) return diff;
+            return String(a.item || '').localeCompare(String(b.item || ''), undefined, { numeric: true, sensitivity: 'base' });
+        });
         setInventario(sortedInv);
     }
     
-    const { data: sal } = await supabase.from('salidas').select('*').order('id', { ascending: false });
-    if (sal) setSalidas(sal);
+    const { data: sal } = await supabase.from('salidas').select('*');
+    if (sal) {
+        const parseFullDate = (dStr: string) => {
+            if(!dStr || dStr === 'S/D') return 0;
+            const nativeTime = new Date(dStr).getTime();
+            if (!isNaN(nativeTime)) return nativeTime;
+            const parts = dStr.split(/[\s,:]+/).filter(Boolean);
+            if(parts.length >= 1 && parts[0].includes('/')) {
+                const dp = parts[0].split('/');
+                if(dp.length === 3) {
+                    let h = Number(parts[1] || 0); const m = Number(parts[2] || 0); const s = Number(parts[3] || 0);
+                    const isPM = dStr.toLowerCase().includes('pm'); const isAM = dStr.toLowerCase().includes('am');
+                    if (isPM && h < 12) h += 12;
+                    if (isAM && h === 12) h = 0;
+                    return new Date(Number(dp[2]), Number(dp[1])-1, Number(dp[0]), h, m, s).getTime();
+                }
+            }
+            return 0;
+        };
+        const sortedSal = sal.sort((a, b) => parseFullDate(a.fechaSalida) - parseFullDate(b.fechaSalida));
+        setSalidas(sortedSal);
+    }
 
     const { data: cfg } = await supabase.from('almacen_config').select('*').single();
     if (cfg && cfg.total_ubicaciones) setTotalUbicaciones(cfg.total_ubicaciones);
@@ -439,27 +463,39 @@ export default function App() {
   });
 
   const parseDateChart = (dStr: string) => {
-      if(!dStr || dStr === 'S/D') return 0;
-      const p = dStr.split('/');
-      if(p.length === 3) return new Date(Number(p[2]), Number(p[1])-1, Number(p[0])).getTime();
-      return new Date(dStr).getTime() || 0;
-  };
+    if(!dStr || dStr === 'S/D') return 0;
+    const p = dStr.split('/');
+    if(p.length === 3) return new Date(Number(p[2]), Number(p[1])-1, Number(p[0])).getTime();
+    return new Date(dStr).getTime() || 0;
+};
 
-  const lineData = Object.keys(trendMap)
-      .sort((a, b) => parseDateChart(a) - parseDateChart(b))
-      .slice(-7)
-      .map(k => {
-          // Convertir el objeto agrupado en el arreglo de textos que espera tu Tooltip
-          const detObj = trendMap[k].SalidasDetalleObj || {};
-          const detallesArr = Object.keys(detObj).map(unidad => `${detObj[unidad]} ${unidad}`);
-          
-          return { 
-              fecha: k !== 'S/D' ? k.substring(0,5) : 'S/D', 
-              Ingresos: trendMap[k].Ingresos, 
-              Salidas: trendMap[k].Salidas,
-              Detalles: detallesArr
-          };
-      });
+const today = new Date();
+let reportMonthDate = today;
+if (today.getDate() >= 27) {
+    reportMonthDate = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+}
+const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const currentReportMonthName = monthNames[reportMonthDate.getMonth()];
+
+const startDate = new Date(reportMonthDate.getFullYear(), reportMonthDate.getMonth() - 1, 27).getTime();
+const endDate = new Date(reportMonthDate.getFullYear(), reportMonthDate.getMonth(), 26, 23, 59, 59).getTime();
+
+const lineData = Object.keys(trendMap)
+    .filter(k => {
+        const t = parseDateChart(k);
+        return t >= startDate && t <= endDate;
+    })
+    .sort((a, b) => parseDateChart(a) - parseDateChart(b))
+    .map(k => {
+        const detObj = trendMap[k].SalidasDetalleObj || {};
+        const detallesArr = Object.keys(detObj).map(unidad => `${detObj[unidad]} ${unidad}`);
+        return { 
+            fecha: k !== 'S/D' ? k.substring(0,5) : 'S/D', 
+            Ingresos: trendMap[k].Ingresos, 
+            Salidas: trendMap[k].Salidas,
+            Detalles: detallesArr
+        };
+    });
 
       const CustomTooltipChart = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
@@ -792,7 +828,7 @@ export default function App() {
                                 </div>
                                 
                                 <div style={{background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #e2e8f0', height: '300px', display: 'flex', flexDirection: 'column', gridColumn: '1 / -1'}}>
-                                    <h3 style={{margin: '0 0 10px 0', textAlign: 'center', color: '#475569'}}>Tendencia de Entradas y Salidas</h3>
+                                <h3 style={{margin: '0 0 10px 0', textAlign: 'center', color: '#475569'}}>Tendencia de Entradas y Salidas <span style={{color: '#3b82f6', fontSize: '0.8em', marginLeft: '10px'}}>Mes corriente ({currentReportMonthName})</span></h3>
                                     <div style={{flex: 1}}>
                                         <ResponsiveContainer width="100%" height="100%">
                                             <LineChart data={lineData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
