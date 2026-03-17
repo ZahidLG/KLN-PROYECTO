@@ -259,20 +259,21 @@ export default function App() {
     if (sal) {
         const parseFullDate = (dStr: string) => {
             if(!dStr || dStr === 'S/D') return 0;
-            const nativeTime = new Date(dStr).getTime();
-            if (!isNaN(nativeTime)) return nativeTime;
-            const parts = dStr.split(/[\s,:]+/).filter(Boolean);
-            if(parts.length >= 1 && parts[0].includes('/')) {
+            const cleanStr = String(dStr).replace(/,/g, '');
+            const parts = cleanStr.split(/[\s:]+/).filter(Boolean);
+            if (parts.length >= 1 && parts[0].includes('/')) {
                 const dp = parts[0].split('/');
-                if(dp.length === 3) {
+                if (dp.length === 3) {
+                    const day = Number(dp[0]); const month = Number(dp[1]) - 1; const year = Number(dp[2]);
                     let h = Number(parts[1] || 0); const m = Number(parts[2] || 0); const s = Number(parts[3] || 0);
-                    const isPM = dStr.toLowerCase().includes('pm'); const isAM = dStr.toLowerCase().includes('am');
+                    const isPM = cleanStr.toLowerCase().includes('pm') || cleanStr.toLowerCase().includes('p.m.'); 
+                    const isAM = cleanStr.toLowerCase().includes('am') || cleanStr.toLowerCase().includes('a.m.');
                     if (isPM && h < 12) h += 12;
                     if (isAM && h === 12) h = 0;
-                    return new Date(Number(dp[2]), Number(dp[1])-1, Number(dp[0]), h, m, s).getTime();
+                    return new Date(year, month, day, h, m, s).getTime();
                 }
             }
-            return 0;
+            return new Date(dStr).getTime() || 0;
         };
         const sortedSal = sal.sort((a, b) => parseFullDate(a.fechaSalida) - parseFullDate(b.fechaSalida));
         setSalidas(sortedSal);
@@ -504,21 +505,83 @@ const formatAxisDate = (dStr: string) => {
 };
 
 const lineData = Object.keys(trendMap)
-    .filter(k => {
-        const t = parseDateChart(k);
-        return t >= startDate && t <= endDate;
-    })
-    .sort((a, b) => parseDateChart(a) - parseDateChart(b))
-    .map(k => {
-        const detObj = trendMap[k].SalidasDetalleObj || {};
-        const detallesArr = Object.keys(detObj).map(unidad => `${detObj[unidad]} ${unidad}`);
-        return { 
-            fecha: formatAxisDate(k), 
-            Ingresos: trendMap[k].Ingresos, 
-            Salidas: trendMap[k].Salidas,
-            Detalles: detallesArr
-        };
-    });
+          .filter(k => {
+              const t = parseDateChart(k);
+              return t >= startDate && t <= endDate;
+          })
+          .sort((a, b) => parseDateChart(a) - parseDateChart(b))
+          .map(k => {
+              const detObj = trendMap[k].SalidasDetalleObj || {};
+              const detallesArr = Object.keys(detObj).map(unidad => `${detObj[unidad]} ${unidad}`);
+              return { 
+                  fecha: formatAxisDate(k), 
+                  Ingresos: trendMap[k].Ingresos, 
+                  Salidas: trendMap[k].Salidas,
+                  Detalles: detallesArr
+              };
+          });
+
+      // --- CÁLCULO DE MÁXIMO SEMANAL ---
+      const entryTimestampsW: number[] = [];
+      const tempEntradasW = new Set();
+      const regEntradaW = (itemObj: any, fechaCampo: string) => {
+          const fecha = itemObj[fechaCampo] || 'S/D';
+          const uniqueKey = `${itemObj.item}-${itemObj.serie || ''}-${itemObj.ubicacion}-${fecha}`;
+          if (!tempEntradasW.has(uniqueKey)) {
+              tempEntradasW.add(uniqueKey);
+              const ts = parseDateChart(fecha);
+              if(ts > 0) entryTimestampsW.push(ts);
+          }
+      };
+      inventario.forEach(i => regEntradaW(i, 'fechaEntrada'));
+      salidas.forEach(s => regEntradaW(s, 'fecha_entrada'));
+
+      const exitTimestampsW: number[] = [];
+      salidas.forEach(s => {
+          let d = 'S/D';
+          if (s.fechaSalida) d = String(s.fechaSalida).replace(',', '').split(' ')[0];
+          const ts = parseDateChart(d);
+          if(ts > 0) exitTimestampsW.push(ts);
+      });
+
+      const weeklyData: any[] = [];
+      let currentStart = new Date(2026, 1, 9); // Lunes 9 de Febrero de 2026
+      const nowTs = new Date().getTime();
+      let currentBalance = 0;
+
+      const formatWDate = (d: Date) => {
+          const dd = String(d.getDate()).padStart(2, '0');
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          return `${dd}/${mm}/${d.getFullYear()}`;
+      };
+
+      while (currentStart.getTime() <= nowTs || weeklyData.length === 0) {
+          const currentEnd = new Date(currentStart);
+          currentEnd.setDate(currentEnd.getDate() + 6); // Domingo
+          
+          const startTs = currentStart.getTime();
+          const endTs = currentEnd.getTime() + 86399999; // Fin del domingo 23:59:59
+
+          let countE = 0; let countS = 0;
+          entryTimestampsW.forEach(ts => { if (ts >= startTs && ts <= endTs) countE++; });
+          exitTimestampsW.forEach(ts => { if (ts >= startTs && ts <= endTs) countS++; });
+
+          const cierre = currentBalance + countE - countS;
+
+          weeklyData.push({
+              semana: `${formatWDate(currentStart)} - ${formatWDate(currentEnd)}`,
+              inicio: currentBalance,
+              entradas: countE,
+              salidas: countS,
+              cierre: cierre
+          });
+
+          currentBalance = cierre;
+          currentStart.setDate(currentStart.getDate() + 7); // Avanzar a la siguiente semana
+      }
+
+      // Si deseas que la tabla empiece con la semana actual hasta arriba, descomenta la siguiente línea:
+      // weeklyData.reverse();
 
       const CustomTooltipChart = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
@@ -817,8 +880,8 @@ const lineData = Object.keys(trendMap)
                             </div>
 
                             {/* Graficos Recharts */}
-                            <div style={{display:'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap:'20px'}}>
-                                <div style={{background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #e2e8f0', height: '300px', display: 'flex', flexDirection: 'column'}}>
+                            <div style={{display:'flex', flexWrap: 'wrap', gap:'20px'}}>
+                                <div style={{background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #e2e8f0', height: '300px', display: 'flex', flexDirection: 'column', flex: '1 1 300px'}}>
                                     <h3 style={{margin: '0 0 10px 0', textAlign: 'center', color: '#475569'}}>Distribución del Espacio</h3>
                                     <div style={{flex: 1}}>
                                         <ResponsiveContainer width="100%" height="100%">
@@ -833,24 +896,35 @@ const lineData = Object.keys(trendMap)
                                     </div>
                                 </div>
 
-                                <div style={{background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #e2e8f0', height: '300px', display: 'flex', flexDirection: 'column'}}>
-                                    <h3 style={{margin: '0 0 10px 0', textAlign: 'center', color: '#475569'}}>Almacenamiento por Unidad</h3>
-                                    <div style={{flex: 1}}>
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={barData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false}/>
-                                                <XAxis dataKey="name" tick={false} />
-                                                <YAxis allowDecimals={false} />
-                                                <RechartsTooltip cursor={{fill: 'transparent'}}/>
-                                                <RechartsLegend />
-                                                <Bar dataKey="Cajas" fill="#3b82f6" radius={[5, 5, 0, 0]} barSize={40} />
-                                                <Bar dataKey="Piezas" fill="#f59e0b" radius={[5, 5, 0, 0]} barSize={40} />
-                                            </BarChart>
-                                        </ResponsiveContainer>
+                                <div style={{background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #e2e8f0', height: '300px', display: 'flex', flexDirection: 'column', flex: '2 1 500px'}}>
+                                    <h3 style={{margin: '0 0 10px 0', textAlign: 'center', color: '#475569'}}>Máximo Semanal</h3>
+                                    <div style={{flex: 1, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '10px'}}>
+                                        <table style={{width: '100%', borderCollapse: 'collapse', textAlign: 'center', fontSize: '0.9rem', minWidth: '400px'}}>
+                                            <thead style={{background: '#f8fafc', position: 'sticky', top: 0, zIndex: 1}}>
+                                                <tr>
+                                                    <th style={{padding: '12px 10px', color: '#1e293b', borderBottom: '2px solid #cbd5e1'}}>Semana</th>
+                                                    <th style={{padding: '12px 10px', color: '#1e293b', borderBottom: '2px solid #cbd5e1'}}>Inicio</th>
+                                                    <th style={{padding: '12px 10px', color: '#10b981', borderBottom: '2px solid #cbd5e1'}}>Entradas</th>
+                                                    <th style={{padding: '12px 10px', color: '#ef4444', borderBottom: '2px solid #cbd5e1'}}>Salidas</th>
+                                                    <th style={{padding: '12px 10px', color: '#3b82f6', borderBottom: '2px solid #cbd5e1'}}>Cierre</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {weeklyData.map((w, idx) => (
+                                                    <tr key={idx} style={{borderBottom: '1px solid #f1f5f9'}}>
+                                                        <td style={{padding: '10px', color: '#475569', fontWeight: 'bold'}}>{w.semana}</td>
+                                                        <td style={{padding: '10px', color: '#475569'}}>{w.inicio}</td>
+                                                        <td style={{padding: '10px', color: '#10b981', fontWeight: 'bold'}}>{w.entradas}</td>
+                                                        <td style={{padding: '10px', color: '#ef4444', fontWeight: 'bold'}}>{w.salidas}</td>
+                                                        <td style={{padding: '10px', color: '#3b82f6', fontWeight: 'bold'}}>{w.cierre}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                                 
-                                <div style={{background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #e2e8f0', height: '300px', display: 'flex', flexDirection: 'column', gridColumn: '1 / -1'}}>
+                                <div style={{background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #e2e8f0', height: '300px', display: 'flex', flexDirection: 'column', flex: '1 1 100%'}}>
                                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
     <button onClick={() => setMonthOffset(prev => prev - 1)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>⬅️</button>
     <h3 style={{ margin: 0, textAlign: 'center', color: '#475569' }}>
